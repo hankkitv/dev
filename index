@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매장 지도 검색 서비스</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+        .popup-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+    <script>
+        // 지도 초기화
+        const map = L.map('map').setView([37.5665, 126.978], 12); // 서울 위치로 설정 (위도, 경도)
+
+        // OpenStreetMap TileLayer 추가
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // CSV 파일 불러오기
+        Papa.parse('stores.csv', {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: true,
+            complete: function(results) {
+                // CSV 데이터 처리
+                results.data.forEach(store => {
+                    const lat = store.latitude;
+                    const lon = store.longitude;
+                    const storeName = store.name;
+                    const address = store.address;
+                    const menu = store.menu;
+                    const hours = store.hours;
+                    const phone = store.phone;
+
+                    // 매장 아이콘 설정
+                    const storeIcon = L.icon({
+                        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/svgs/solid/map-marker-alt.svg',
+                        iconSize: [30, 30], 
+                        iconAnchor: [15, 30],
+                        popupAnchor: [0, -30]
+                    });
+
+                    // 매장 위치에 마커 추가
+                    const marker = L.marker([lat, lon], {icon: storeIcon}).addTo(map);
+
+                    // 마커 클릭 시 팝업 내용 설정
+                    marker.bindPopup(`
+                        <div class="popup-content">
+                            <h4>${storeName}</h4>
+                            <p><strong>주소:</strong> ${address}</p>
+                            <p><strong>메뉴:</strong> ${menu}</p>
+                            <p><strong>영업시간:</strong> ${hours}</p>
+                            <p><strong>전화번호:</strong> ${phone}</p>
+                        </div>
+                    `);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
