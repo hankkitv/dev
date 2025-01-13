@@ -114,10 +114,10 @@
         <div id="search-results"></div>
     </div>
 
+    <!-- 지도 스타일 선택 버튼 (이미지 버튼으로 변경) -->
     <div id="tile-selector">
-        <button id="osm-btn" class="tile-button" title="OpenStreetMap"></button>
-        <button id="carto-btn" class="tile-button" title="CartoDB"></button>
-        <button id="stamen-btn" class="tile-button" title="Stamen Toner"></button>
+        <button id="osm-btn" class="tile-button" title="OpenStreetMap" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/a/a1/OpenStreetMap_logo.svg');"></button>
+        <button id="satellite-btn" class="tile-button" title="Satellite" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Maps_logo_2019.svg');"></button>
     </div>
 
     <div id="map"></div>
@@ -136,14 +136,15 @@
         }).addTo(map);
 
         // 다른 스타일 타일 레이어들
-        const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://carto.com/">CartoDB</a> contributors'
+        // const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+        //     attribution: '&copy; <a href="https://carto.com/">CartoDB</a> contributors'
+        // });
+        
+        // 위성지도 TileLayer 추가 (Esri 위성지도 사용)
+        const satelliteLayer = L.tileLayer('https://{s}.tiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; <a href="https://www.esri.com/en-us/arcgis/products/arcgis-online/overview">Esri</a> contributors'
         });
-
-        const stamenLayer = L.tileLayer('https://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://stamen.com/">Stamen</a> contributors'
-        });
-
+        
         // 기본 타일 레이어 설정
         let currentLayer = osmLayer;
 
@@ -154,18 +155,18 @@
             map.addLayer(currentLayer);
         });
 
-        $('#carto-btn').on('click', function() {
+        // $('#carto-btn').on('click', function() {
+        //     map.removeLayer(currentLayer);
+        //     currentLayer = cartoLayer;
+        //     map.addLayer(currentLayer);
+        // });
+
+        $('#satellite-btn').on('click', function() {
             map.removeLayer(currentLayer);
-            currentLayer = cartoLayer;
+            currentLayer = satelliteLayer;
             map.addLayer(currentLayer);
         });
-
-        $('#stamen-btn').on('click', function() {
-            map.removeLayer(currentLayer);
-            currentLayer = stamenLayer;
-            map.addLayer(currentLayer);
-        });
-
+        
         // 지도 스케일 표시
         L.control.scale().addTo(map);
 
