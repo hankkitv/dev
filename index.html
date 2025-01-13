@@ -71,6 +71,40 @@
             font-weight: bold;
             font-size: 16px;
         }
+
+        #tile-selector {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .tile-button {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 5px;
+            border: none;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #osm-btn {
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/a/a1/OpenStreetMap_logo.svg');
+        }
+
+        #carto-btn {
+            background-image: url('https://carto.com/static/img/carto-logo.svg');
+        }
+
+        #stamen-btn {
+            background-image: url('https://stamen.com/wp-content/uploads/2020/06/2017-Stamen-Logo.png');
+        }
+
     </style>
 </head>
 <body>
@@ -78,6 +112,12 @@
     <div id="search-container">
         <input type="text" id="search-input" placeholder="매장명, 전화번호, 메뉴 검색" />
         <div id="search-results"></div>
+    </div>
+
+    <div id="tile-selector">
+        <button id="osm-btn" class="tile-button" title="OpenStreetMap"></button>
+        <button id="carto-btn" class="tile-button" title="CartoDB"></button>
+        <button id="stamen-btn" class="tile-button" title="Stamen Toner"></button>
     </div>
 
     <div id="map"></div>
@@ -90,10 +130,44 @@
         // 지도 초기화
         const map = L.map('map').setView([37.5665, 126.978], 12); // 서울 위치로 설정 (위도, 경도)
 
-        // OpenStreetMap TileLayer 추가
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // 기본 OpenStreetMap TileLayer 추가
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+
+        // 다른 스타일 타일 레이어들
+        const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://carto.com/">CartoDB</a> contributors'
+        });
+
+        const stamenLayer = L.tileLayer('https://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://stamen.com/">Stamen</a> contributors'
+        });
+
+        // 기본 타일 레이어 설정
+        let currentLayer = osmLayer;
+
+        // 타일 스타일 변경 버튼 클릭 시 지도 스타일 변경
+        $('#osm-btn').on('click', function() {
+            map.removeLayer(currentLayer);
+            currentLayer = osmLayer;
+            map.addLayer(currentLayer);
+        });
+
+        $('#carto-btn').on('click', function() {
+            map.removeLayer(currentLayer);
+            currentLayer = cartoLayer;
+            map.addLayer(currentLayer);
+        });
+
+        $('#stamen-btn').on('click', function() {
+            map.removeLayer(currentLayer);
+            currentLayer = stamenLayer;
+            map.addLayer(currentLayer);
+        });
+
+        // 지도 스케일 표시
+        L.control.scale().addTo(map);
 
         let storeData = [];
 
