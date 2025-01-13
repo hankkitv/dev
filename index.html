@@ -116,8 +116,8 @@
 
     <!-- 지도 스타일 선택 버튼 (이미지 버튼으로 변경) -->
     <div id="tile-selector">
-        <button id="osm-btn" class="tile-button" title="OpenStreetMap" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/a/a1/OpenStreetMap_logo.svg');"></button>
-        <button id="satellite-btn" class="tile-button" title="Satellite" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Maps_logo_2019.svg');"></button>
+        <button id="osm-btn" class="tile-button" title="OpenStreetMap" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b0/Openstreetmap_logo.svg');"></button>
+        <button id="satellite-btn" class="tile-button" title="Satellite" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/bd/Google_Maps_Logo_2020.svg');"></button>
     </div>
 
     <div id="map"></div>
@@ -141,10 +141,11 @@
         // });
         
         // 위성지도 TileLayer 추가 (Esri 위성지도 사용)
-        const satelliteLayer = L.tileLayer('https://{s}.tiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '&copy; <a href="https://www.esri.com/en-us/arcgis/products/arcgis-online/overview">Esri</a> contributors'
-        });
+        var esri_url ='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        var esri_attribution = '© Esri © OpenStreetMap Contributors';
         
+        const satelliteLayer = L.tileLayer(esri_url, {id: 'MapID', maxZoom: 20, tileSize: 512, zoomOffset: -1, attribution: esri_attribution});
+
         // 기본 타일 레이어 설정
         let currentLayer = osmLayer;
 
