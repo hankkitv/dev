@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>매장 지도 검색 서비스</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Nanum Gothic', sans-serif;
+            font-family: 'Roboto', sans-serif;
             background-color: #2c2f38;
             color: #fff;
             margin: 0;
@@ -17,60 +17,111 @@
 
         #map {
             width: 100%;
-            height: 80vh;
+            height: 100vh; /* 지도 크기 변경 */
         }
 
-        #search-container {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #444;
+        /* 검색 아이콘 스타일 */
+        #search-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #0288D1;
+            color: white;
             padding: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-            z-index: 1000;
-            border-radius: 5px;
-            width: 300px;
-            text-align: center;
-            color: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 9999;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
 
-        #search-input {
+        /* 전체 화면 검색 모달 */
+        .search-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            visibility: hidden;
+            opacity: 0;
+            z-index: 10000;
+            transition: all 0.3s ease;
+        }
+
+        .search-modal.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .search-modal .content {
+            position: absolute;
+            max-height: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            text-align: left;
+        }
+
+        .search-modal .store-name {
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .search-modal .search-input {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #666;
+            padding: 20px;
+            font-size: 24px;
+            border: 2px solid #0288D1;
             border-radius: 5px;
-            font-size: 14px;
             background-color: #333;
-            color: #fff;
+            color: white;
+        }
+        
+        .modal-store-info {
+            font-size: 18px;
+            left: 50%;
+            padding: 5px 5px;
+            color: white;
+            overflow-y: auto;
+            z-index: 9999;
         }
 
         #search-results {
-            max-height: 250px;
+            width: 100%;
+            padding: 20px;
+            font-size: 24px;
             overflow-y: auto;
             margin-top: 10px;
-            border: 1px solid #666;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-            background-color: #333;
-            font-size: 14px;
         }
 
-        .search-item {
+        div.search-item {
             padding: 10px;
+        }
+
+        .search-modal button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
             cursor: pointer;
-            border-bottom: 1px solid #444;
-        }
+        }        
 
-        .search-item:hover {
-            background-color: #555;
-        }
-
+        /* 매장 정보 창 */
         .store-info {
-            display: block;
-            color: #bbb;
-            margin-top: 5px;
-            font-size: 13px;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: white;
+            display: none;
+            z-index: 9999;
         }
 
         .store-name {
@@ -78,55 +129,42 @@
             font-size: 16px;
         }
 
-        #tile-selector {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
+        .store-info h3 {
+            margin: 0;
+            font-size: 18px;
         }
 
-        .tile-button {
-            width: 40px;
-            height: 40px;
-            margin-bottom: 5px;
-            border: none;
-            background-size: cover;
-            background-position: center;
-            cursor: pointer;
-            border-radius: 5px;
+        .store-info p {
+            margin: 5px 0;
         }
-
-        #osm-btn {
-            background-image: url('https://upload.wikimedia.org/wikipedia/commons/a/a1/OpenStreetMap_logo.svg');
-        }
-
-        #carto-btn {
-            background-image: url('https://carto.com/static/img/carto-logo.svg');
-        }
-
-        #stamen-btn {
-            background-image: url('https://stamen.com/wp-content/uploads/2020/06/2017-Stamen-Logo.png');
-        }
-
     </style>
 </head>
 <body>
 
-    <div id="search-container">
-        <input type="text" id="search-input" placeholder="매장명, 전화번호, 메뉴 검색" />
-        <div id="search-results"></div>
-    </div>
-
-    <!-- 지도 스타일 선택 버튼 (이미지 버튼으로 변경) -->
-    <div id="tile-selector">
-        <button id="osm-btn" class="tile-button" title="OpenStreetMap" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/b0/Openstreetmap_logo.svg');"></button>
-        <button id="satellite-btn" class="tile-button" title="Satellite" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/b/bd/Google_Maps_Logo_2020.svg');"></button>
-    </div>
-
     <div id="map"></div>
+
+    <!-- 검색 아이콘 -->
+    <div id="search-icon">
+        <i class="material-icons">search</i>
+    </div>
+
+    <!-- 전체 화면 검색 모달 -->
+    <div id="search-modal" class="search-modal">
+        <div class="content">
+            <input type="text" class="search-input" placeholder="매장명, 전화번호, 메뉴 검색" />
+            <div id="search-results"></div>
+        </div>
+        <button id="close-modal">
+            <i class="material-icons">close</i>
+        </button>
+    </div>
+
+    <!-- 매장 정보 창 -->
+    <div id="store-info" class="store-info">
+        <h3 id="store-name"></h3>
+        <p id="store-address"></p>
+        <p id="store-phone"></p>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -141,36 +179,54 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
+        // // 위성지도 TileLayer 추가
+        // const satelliteLayer = L.tileLayer('https://{s}.tile.satellite.maps/api/{z}/{x}/{y}.jpg', {
+        //     attribution: '&copy; <a href="https://www.satellite.maps">Satellite Maps</a>'
+        // });
+
         // 위성지도 TileLayer 추가 (Esri 위성지도 사용)
         var esri_url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
         var esri_attribution = '© Esri © OpenStreetMap Contributors';
 
         const satelliteLayer = L.tileLayer(esri_url, {id: 'MapID', maxZoom: 20, tileSize: 512, zoomOffset: -1, attribution: esri_attribution});
+        // 기본 지도와 위성지도를 전환할 수 있는 제어기 추가
+        const baseMaps = {
+            "기본 지도": osmLayer,
+            "위성 지도": satelliteLayer
+        };
+        
+        L.control.layers(baseMaps).addTo(map);
 
-        // 기본 타일 레이어 설정
-        let currentLayer = osmLayer;
-
-        // 타일 스타일 변경 버튼 클릭 시 지도 스타일 변경
-        $('#osm-btn').on('click', function() {
-            map.removeLayer(currentLayer);
-            currentLayer = osmLayer;
-            map.addLayer(currentLayer);
-        });
-
-        $('#satellite-btn').on('click', function() {
-            map.removeLayer(currentLayer);
-            currentLayer = satelliteLayer;
-            map.addLayer(currentLayer);
-        });
-
-        // 지도 스케일 표시
-        L.control.scale().addTo(map);
-
+        // 매장 데이터 불러오기 (CSV)
         let storeData = [];
         let storeMarkers = [];
+        let openedStoreList = null; // 열려 있는 매장 리스트를 추적
 
-        // CSV 파일 불러오기
-        Papa.parse('stores.csv', {
+        // const stores = [];
+        // 매장정보 csv
+        // fetch('https://raw.githubusercontent.com/hankkitv/dev/refs/heads/main/stores.csv')
+        //     .then(response => response.text())
+        //     .then(data => {
+        //         const lines = data.split('\n');
+        //         lines.forEach(line => {
+        //             const fields = line.split(',');
+        //             const store = {
+        //                 name: fields[0],
+        //                 lat: parseFloat(fields[1]),
+        //                 lon: parseFloat(fields[2]),
+        //                 address: fields[3],
+        //                 phone: fields[4]
+        //             };
+        //             stores.push(store);
+        //             // 매장 마커 추가
+        //             L.marker([store.lat, store.lon]).addTo(map)
+        //                 .bindPopup(store.name)
+        //                 .on('click', () => showStoreInfo(store));
+        //         });
+        //     })
+        //     .catch(err => console.error("CSV 파일 로드 오류:", err));
+
+        Papa.parse('https://raw.githubusercontent.com/hankkitv/dev/refs/heads/main/stores.csv', {
             download: true,
             header: true,
             skipEmptyLines: true,
@@ -186,7 +242,7 @@
         // 매장 아이콘 설정 (빨간색)
         function getStoreIcon() {
             return L.icon({
-                iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/88/Red_pin_icon.svg',  // 빨간색 아이콘
+                iconUrl: 'map-pin.svg',
                 iconSize: [30, 30],
                 iconAnchor: [15, 30],
                 popupAnchor: [0, -30]
@@ -215,47 +271,101 @@
                         </div>
                     `;
                 }).join('');
-                
-                // 리스트를 팝업으로 표시
-                marker.bindPopup(storeListHTML).openPopup();
+
+                if (openedStoreList) {
+                    openedStoreList.remove(); // 기존 리스트를 제거
+                }
+
+                openedStoreList = L.popup()
+                    .setLatLng(marker.getLatLng())
+                    .setContent(storeListHTML)
+                    .openOn(map);
             });
         }
 
         function showStoreInfo(id) {
             const store = storeData.find(s => s.id === id);
             alert(`매장: ${store.name}\n전화: ${store.phone}\n메뉴: ${store.menu}`);
+            if (openedStoreList) {
+                openedStoreList.remove(); // 리스트 닫기
+            }
         }
 
-        // 실시간 검색 처리
-        $('#search-input').on('input', function() {
-            const query = $(this).val().toLowerCase();
-            const results = storeData.filter(store =>
-                store.name.toLowerCase().includes(query) ||
-                store.phone.toLowerCase().includes(query) ||
-                store.menu.toLowerCase().includes(query)
-            );
+        // 검색 모달 토글 함수
+        const searchModal = document.getElementById('search-modal');
+        const searchIcon = document.getElementById('search-icon');
+        const closeModalBtn = document.getElementById('close-modal');
+        const searchInput = document.querySelector('.search-input');
 
-            $('#search-results').empty();
-            if (results.length > 0) {
-                results.forEach(store => {
-                    const resultItem = $('<div>')
-                        .addClass('search-item')
-                        .html(`
-                            <span class="store-name">${store.name}</span>
-                            <div class="store-info"><strong>전화:</strong> ${store.phone}</div>
-                            <div class="store-info"><strong>메뉴:</strong> ${store.menu}</div>
-                        `)
-                        .on('click', function() {
-                            map.setView([store.latitude, store.longitude], 14);
-                            const marker = storeMarkers.find(m => m.storeInfo === store);
-                            marker.openPopup();
-                        });
-                    $('#search-results').append(resultItem);
-                });
-            } else {
-                $('#search-results').append('<div>검색 결과가 없습니다.</div>');
+        searchIcon.addEventListener('click', () => {
+            searchModal.classList.add('active');
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            searchModal.classList.remove('active');
+        });
+
+        document.body.addEventListener('keyup', (event) => {
+            if (event.which === 27) {  // ESC 키
+                searchModal.classList.remove('active');
             }
         });
+
+        // 지도 스케일 표시
+        L.control.scale().addTo(map);
+
+        // 매장 검색 필터링
+        searchInput.addEventListener('input', function() {
+            const query = searchInput.value.toLowerCase();
+            const filteredStores = storeData.filter(store => store.name.toLowerCase().includes(query) || store.address.toLowerCase().includes(query));
+            
+            // 화면에 매장 리스트 표시
+            displayStoreList(filteredStores);
+        });
+
+        // 매장 리스트 표시 함수
+        function displayStoreList(stores) {
+            const storeListDiv = document.querySelector('#search-results');
+            storeListDiv.innerHTML = '';
+
+            stores.forEach(store => {
+                const storeItem = document.createElement('div');
+                storeItem.classList.add('search-item');
+                storeItem.innerHTML = `
+                            <span class="store-name">${store.name}</span>
+                            <div class="modal-store-info"><strong>주소:</strong> ${store.address}</div>
+                            <div class="modal-store-info"><strong>전화:</strong> ${store.phone}</div>
+                            <div class="modal-store-info"><strong>메뉴:</strong> ${store.menu}</div>
+                        `;
+                storeItem.addEventListener('click', () => {
+                    // showStoreInfo(store);
+                    map.setView([store.latitude, store.longitude], 14);
+                    const marker = storeMarkers.find(m => m.storeInfo === store);
+                    marker.openPopup();
+                    searchModal.classList.remove('active');
+                });
+                storeListDiv.appendChild(storeItem);
+            });
+        }
+
+        // 매장 정보 창 표시
+        function showStoreInfo(store) {
+            document.getElementById('store-name').textContent = store.name;
+            document.getElementById('store-address').textContent = store.address;
+            document.getElementById('store-phone').textContent = store.phone;
+
+            // 매장 위치로 지도 이동
+            map.setView([store.lat, store.lon], 15);
+
+            // 매장 정보 창 표시
+            document.getElementById('store-info').style.display = 'block';
+        }
+
+        // 매장 정보 창 닫기
+        document.getElementById('store-info').addEventListener('click', () => {
+            document.getElementById('store-info').style.display = 'none';
+        });
+
     </script>
 
 </body>
