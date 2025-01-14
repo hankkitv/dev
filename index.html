@@ -10,6 +10,9 @@
     <style>
         body {
             font-family: 'Nanum Gothic', sans-serif;
+            background-color: #2c2f38;
+            color: #fff;
+            margin: 0;
         }
 
         #map {
@@ -22,47 +25,50 @@
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: white;
+            background-color: #444;
             padding: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
             z-index: 1000;
             border-radius: 5px;
             width: 300px;
             text-align: center;
+            color: #fff;
         }
 
         #search-input {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #666;
             border-radius: 5px;
             font-size: 14px;
+            background-color: #333;
+            color: #fff;
         }
 
         #search-results {
             max-height: 250px;
             overflow-y: auto;
             margin-top: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #666;
             border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            background-color: #f9f9f9;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            background-color: #333;
             font-size: 14px;
         }
 
         .search-item {
             padding: 10px;
             cursor: pointer;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #444;
         }
 
         .search-item:hover {
-            background-color: #f0f0f0;
+            background-color: #555;
         }
 
         .store-info {
             display: block;
-            color: #555;
+            color: #bbb;
             margin-top: 5px;
             font-size: 13px;
         }
@@ -135,15 +141,10 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // 다른 스타일 타일 레이어들
-        // const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-        //     attribution: '&copy; <a href="https://carto.com/">CartoDB</a> contributors'
-        // });
-        
         // 위성지도 TileLayer 추가 (Esri 위성지도 사용)
-        var esri_url ='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        var esri_url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
         var esri_attribution = '© Esri © OpenStreetMap Contributors';
-        
+
         const satelliteLayer = L.tileLayer(esri_url, {id: 'MapID', maxZoom: 20, tileSize: 512, zoomOffset: -1, attribution: esri_attribution});
 
         // 기본 타일 레이어 설정
@@ -156,22 +157,17 @@
             map.addLayer(currentLayer);
         });
 
-        // $('#carto-btn').on('click', function() {
-        //     map.removeLayer(currentLayer);
-        //     currentLayer = cartoLayer;
-        //     map.addLayer(currentLayer);
-        // });
-
         $('#satellite-btn').on('click', function() {
             map.removeLayer(currentLayer);
             currentLayer = satelliteLayer;
             map.addLayer(currentLayer);
         });
-        
+
         // 지도 스케일 표시
         L.control.scale().addTo(map);
 
         let storeData = [];
+        let storeMarkers = [];
 
         // CSV 파일 불러오기
         Papa.parse('stores.csv', {
@@ -181,17 +177,16 @@
             dynamicTyping: true,
             complete: function(results) {
                 storeData = results.data;
-                // 초기 매장 마커 추가
                 storeData.forEach(store => {
                     addStoreMarker(store);
                 });
             }
         });
 
-        // 매장 아이콘 설정
+        // 매장 아이콘 설정 (빨간색)
         function getStoreIcon() {
             return L.icon({
-                iconUrl: 'https://my.living-apps.de/npm/@fortawesome/fontawesome-free@6.6.0/svgs/solid/map-pin.svg',
+                iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/88/Red_pin_icon.svg',  // 빨간색 아이콘
                 iconSize: [30, 30],
                 iconAnchor: [15, 30],
                 popupAnchor: [0, -30]
@@ -204,31 +199,42 @@
             const lon = store.longitude;
             const marker = L.marker([lat, lon], {icon: getStoreIcon()}).addTo(map);
 
-            // 마커 클릭 시 팝업 내용 설정
-            marker.bindPopup(`
-                <div class="popup-content">
-                    <h4>${store.name}</h4>
-                    <p><strong>주소:</strong> ${store.address}</p>
-                    <p><strong>메뉴:</strong> ${store.menu}</p>
-                    <p><strong>영업시간:</strong> ${store.hours}</p>
-                    <p><strong>전화번호:</strong> ${store.phone}</p>
-                </div>
-            `);
-
-            // 마커에 store 정보를 추가
             marker.storeInfo = store;
+            storeMarkers.push(marker);
+
+            marker.on('click', function() {
+                // 여러 음식점이 동일 위치에 있을 경우, 팝업을 리스트로 전환
+                const nearbyStores = storeMarkers.filter(m => m.getLatLng().equals(marker.getLatLng()));
+                const storeListHTML = nearbyStores.map(m => {
+                    const store = m.storeInfo;
+                    return `
+                        <div class="search-item" onclick="showStoreInfo(${store.id})">
+                            <span class="store-name">${store.name}</span>
+                            <div class="store-info"><strong>전화:</strong> ${store.phone}</div>
+                            <div class="store-info"><strong>메뉴:</strong> ${store.menu}</div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // 리스트를 팝업으로 표시
+                marker.bindPopup(storeListHTML).openPopup();
+            });
+        }
+
+        function showStoreInfo(id) {
+            const store = storeData.find(s => s.id === id);
+            alert(`매장: ${store.name}\n전화: ${store.phone}\n메뉴: ${store.menu}`);
         }
 
         // 실시간 검색 처리
         $('#search-input').on('input', function() {
             const query = $(this).val().toLowerCase();
-            const results = storeData.filter(store => 
+            const results = storeData.filter(store =>
                 store.name.toLowerCase().includes(query) ||
                 store.phone.toLowerCase().includes(query) ||
                 store.menu.toLowerCase().includes(query)
             );
 
-            // 검색 결과 리스트 업데이트
             $('#search-results').empty();
             if (results.length > 0) {
                 results.forEach(store => {
@@ -240,9 +246,9 @@
                             <div class="store-info"><strong>메뉴:</strong> ${store.menu}</div>
                         `)
                         .on('click', function() {
-                            map.setView([store.latitude, store.longitude], 14); // 매장 위치로 이동
-                            const marker = storeDataMarkers.find(m => m.storeInfo === store);
-                            marker.openPopup(); // 팝업 열기
+                            map.setView([store.latitude, store.longitude], 14);
+                            const marker = storeMarkers.find(m => m.storeInfo === store);
+                            marker.openPopup();
                         });
                     $('#search-results').append(resultItem);
                 });
