@@ -82,7 +82,6 @@
             font-size: 18px;
             left: 50%;
             padding: 5px 5px;
-            color: white;
             overflow-y: auto;
             z-index: 9999;
         }
@@ -96,8 +95,15 @@
             margin-top: 10px;
         }
 
-        div.search-item {
+        .search-item {
             padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .search-item:hover {
+            background-color: #b0fff8;
+            color: black;
         }
 
         .search-modal button {
@@ -139,10 +145,23 @@
             margin: 5px 0;
         }
 
+        .leaflet-popup-content {
+            margin: 4px;
+            line-height: 1.3;            
+            font-size: 1.08333em;
+            min-height: 1px;            
+        }
+
+        .leaflet-popup-content-wrapper {
+            padding: 1px;
+            text-align: left;
+            border-radius: 3px;
+        }
+
         /* Media queries for responsive design */
         @media (max-width: 768px) {
             .search-modal .content {
-                width: 90%;
+                width: 80%;
                 top: 5%;
             }
 
@@ -162,7 +181,7 @@
 
         @media (max-width: 480px) {
             .search-modal .content {
-                width: 95%;
+                width: 80%;
                 top: 2%;
             }
 
@@ -291,12 +310,12 @@
             });
         }
 
-        // L.marker([lat, lon], {icon: getStoreIcon()}).addTo(map);
+        // icon: getStoreIcon()
         // 매장 마커 추가
         function addStoreMarker(store) {
             const lat = store.latitude;
             const lon = store.longitude;
-            const marker = L.marker([lat, lon], {opacity: 1}).addTo(map);
+            const marker = L.marker([lat, lon], {}).addTo(map);
 
             marker.storeInfo = store;
             storeMarkers.push(marker);
@@ -309,8 +328,8 @@
                     return `
                         <div class="search-item" onclick="showStoreInfo(${store.id})">
                             <span class="store-name">${store.name}</span>
-                            <div class="store-info"><strong>전화:</strong> ${store.phone}</div>
-                            <div class="store-info"><strong>메뉴:</strong> ${store.menu}</div>
+                            <div ><strong>전화:</strong> ${store.phone}</div>
+                            <div ><strong>메뉴:</strong> ${store.menu}</div>
                         </div>
                     `;
                 }).join('');
@@ -360,7 +379,7 @@
         // 매장 검색 필터링
         searchInput.addEventListener('input', function() {
             const query = searchInput.value.toLowerCase();
-            const filteredStores = storeData.filter(store => store.name.toLowerCase().includes(query) || store.address.toLowerCase().includes(query));
+            const filteredStores = storeData.filter(store => store.name.toLowerCase().includes(query) || store.address.toLowerCase().includes(query) || store.menu.toLowerCase().includes(query)|| store.phone.toLowerCase().includes(query));
             
             // 화면에 매장 리스트 표시
             displayStoreList(filteredStores);
@@ -376,9 +395,9 @@
                 storeItem.classList.add('search-item');
                 storeItem.innerHTML = `
                             <span class="store-name">${store.name}</span>
-                            <div class="modal-store-info"><strong>주소:</strong> ${store.address}</div>
-                            <div class="modal-store-info"><strong>전화:</strong> ${store.phone}</div>
-                            <div class="modal-store-info"><strong>메뉴:</strong> ${store.menu}</div>
+                            <div class="modal-store-info "><strong>주소:</strong> ${store.address}</div>
+                            <div class="modal-store-info "><strong>전화:</strong> ${store.phone}</div>
+                            <div class="modal-store-info  "><strong>메뉴:</strong> ${store.menu}</div>
                         `;
                 storeItem.addEventListener('click', () => {
                     // showStoreInfo(store);
@@ -392,17 +411,17 @@
         }
 
         // 매장 정보 창 표시
-        function showStoreInfo(store) {
-            document.getElementById('store-name').textContent = store.name;
-            document.getElementById('store-address').textContent = store.address;
-            document.getElementById('store-phone').textContent = store.phone;
+        // function showStoreInfo(store) {
+        //     document.getElementById('store-name').textContent = store.name;
+        //     document.getElementById('store-address').textContent = store.address;
+        //     document.getElementById('store-phone').textContent = store.phone;
 
-            // 매장 위치로 지도 이동
-            map.setView([store.lat, store.lon], 15);
+        //     // 매장 위치로 지도 이동
+        //     map.setView([store.lat, store.lon], 15);
 
-            // 매장 정보 창 표시
-            document.getElementById('store-info').style.display = 'block';
-        }
+        //     // 매장 정보 창 표시
+        //     document.getElementById('store-info').style.display = 'block';
+        // }
 
         // 매장 정보 창 닫기
         document.getElementById('store-info').addEventListener('click', () => {
