@@ -291,11 +291,12 @@
             });
         }
 
+        // L.marker([lat, lon], {icon: getStoreIcon()}).addTo(map);
         // 매장 마커 추가
         function addStoreMarker(store) {
             const lat = store.latitude;
             const lon = store.longitude;
-            const marker = L.marker([lat, lon], {icon: getStoreIcon()}).addTo(map);
+            const marker = L.marker([lat, lon], {opacity: 1}).addTo(map);
 
             marker.storeInfo = store;
             storeMarkers.push(marker);
